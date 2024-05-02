@@ -13,7 +13,7 @@ pipeline {
     stage('Build image') {
       steps{
         script {
-          dockerImage = docker.build bouzidieslem/itop:latest
+          docker.build("bouzidieslem/itop:latest")
         }
       }
     }
