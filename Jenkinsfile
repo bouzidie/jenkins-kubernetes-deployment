@@ -1,41 +1,45 @@
 pipeline {
-  environment {
-    dockerimagename = "bouzidieslem/itop:latest"
-    dockerImage = ""
-  }
-  agent any
-  stages {
-    stage('Checkout Source') {
-      steps {
-        git 'https://github.com/bouzidie/jenkins-kubernetes-deployment.git'
-      }
+    agent any
+    
+    environment {
+        dockerImage = "bouzidieslem/itop:latest"
+        registryCredential = 'Dockerhub credential'
+        kubernetesCredential = 'mykubeconfig'
     }
-    stage('Build image') {
-      steps{
-        script {
-          docker.build("bouzidieslem/itop:latest")
+    
+    stages {
+        stage('Checkout Source') {
+            steps {
+                git credentialsId: 'Github credential', url: 'https://github.com/bouzidie/jenkins-kubernetes-deployment.git'
+            }
         }
-      }
-    }
-    stage('Pushing Image') {
-      environment {
-          registryCredential = 'dockerhub-credentials'
-           }
-      steps{
-        script {
-          docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
-            dockerImage.push("latest")
-          }
+        
+        stage('Build Image') {
+            steps {
+                script {
+                    docker.build(dockerImage)
+                }
+            }
         }
-      }
-    }
-    stage('Deploying itop container to Kubernetes') {
-      steps {
-        script {
-          kubernetesDeploy(configs: "Deployment_itop.yaml", 
-                                         "service_itop.yaml")
+        
+        stage('Push Image to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        dockerImage.push()
+                    }
+                }
+            }
         }
-      }
+        
+        stage('Deploy itop Container to Kubernetes') {
+            steps {
+                script {
+                    withCredentials([file(credentialsId: kubernetesCredential, variable: 'kubeconfig')]) {
+                        kubernetesDeploy(configs: ["Deployment_itop.yaml", "service_itop.yaml"], kubeconfig: kubeconfig)
+                    }
+                }
+            }
+        }
     }
-  }
 }
