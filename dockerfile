@@ -99,6 +99,7 @@ RUN set -x \
 #=== Apache vhost ===
 RUN { \
   echo "<VirtualHost *:80>"; \
+  echo "<VirtualHost *:80>"; \
   echo "DocumentRoot /var/www/$APP_NAME"; \
   echo; \
   echo "<Directory /var/www/$APP_NAME>"; \
@@ -141,4 +142,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint
 ENTRYPOINT [ "docker-entrypoint" ]
 
 #=== Re-Set CMD as we changed the default entrypoint ===
-CMD [ "apache2-foreground" ]
+CMD [ "apache2-foreground" ]       
