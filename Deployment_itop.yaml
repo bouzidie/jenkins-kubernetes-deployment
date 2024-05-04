@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: itop-deployment
+  name: itop-deployment-islem
 spec:
   replicas: 2
   selector:
