@@ -2,13 +2,11 @@ pipeline {
     agent any
     
     environment {
-        dockerImage = "bouzidieslem/itop:latest"
-        registryCredential = 'Dockerhub credential'
-        kubernetesCredential = 'mykubeconfig'
+        dockerImage = 'bouzidieslem/itop:latest'
     }
     
     stages {
-        stage('Checkout Source') {
+        stage('Git Checkout') {
             steps {
                 git credentialsId: 'Github credential', url: 'https://github.com/bouzidie/jenkins-kubernetes-deployment.git'
             }
@@ -22,22 +20,12 @@ pipeline {
             }
         }
         
-        stage('Push Image to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
-                        dockerImage.push()
-                    }
-                }
-            }
-        }
-        
         stage('Deploy itop Container to Kubernetes') {
             steps {
-                script {
-                    withCredentials([file(credentialsId: kubernetesCredential, variable: 'kubeconfig')]) {
-                        kubernetesDeploy(configs: ["Deployment_itop.yaml", "service_itop.yaml"], kubeconfig: kubeconfig)
-                    }
+                // Récupérer le fichier kubeconfig depuis Jenkins
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    // Déployer l'application sur Kubernetes en utilisant le fichier kubeconfig
+                    sh "kubectl apply -f Deployment_itop.yaml -f service_itop.yaml --kubeconfig=\$KUBECONFIG"
                 }
             }
         }
