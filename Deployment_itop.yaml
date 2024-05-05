@@ -16,7 +16,7 @@ spec:
       - name: itop
         image: bouzidieslem/itop:latest
         ports:
-        - containerPort: 8082
+        - containerPort: 80
         env:
         - name: ITOP_DB_HOST
           value: "itop" # Nom du service MariaDB dans Kubernetes
