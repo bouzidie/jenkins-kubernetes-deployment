@@ -16,7 +16,12 @@ spec:
       - name: itop
         image: bouzidieslem/itop:latest
         ports:
-        - containerPort: 80
+      - containerPort: 80
+        resources:
+          requests:
+            cpu: "200m"
+          limits:
+            cpu: "500m"
         env:
         - name: ITOP_DB_HOST
           value: "itop" # Nom du service MariaDB dans Kubernetes
@@ -44,6 +49,7 @@ spec:
           value: "On"
         - name: PHP_ERROR_REPORTING
           value: "E_ALL & ~E_DEPRECATED & ~E_STRICT"
+        
 
 
 
