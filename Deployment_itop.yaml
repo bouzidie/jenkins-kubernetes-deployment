@@ -22,6 +22,33 @@ spec:
             cpu: "500m"
           requests:
             cpu: "200m"
+        env:
+        - name: ITOP_DB_HOST
+          value: "itop" # Nom du service MariaDB dans Kubernetes
+        - name: ITOP_DB_NAME
+          value: "itop"
+        - name: ITOP_DB_USER
+          value: "itop"
+        - name: ITOP_DB_PASS
+          value: "itop"
+        - name: PHP_TIMEZONE
+          value: "Europe/Paris"
+        - name: PHP_ENABLE_UPLOADS
+          value: "1"
+        - name: PHP_MEMORY_LIMIT
+          value: "256M"
+        - name: PHP_POST_MAX_SIZE
+          value: "64M"
+        - name: PHP_UPLOAD_MAX_FILESIZE
+          value: "32M"
+        - name: PHP_MAX_FILE_UPLOADS
+          value: "20"
+        - name: PHP_MAX_INPUT_TIME
+          value: "60"
+        - name: PHP_LOG_ERRORS
+          value: "On"
+        - name: PHP_ERROR_REPORTING
+          value: "E_ALL & ~E_DEPRECATED & ~E_STRICT"
       volumes:
       - name: itop-data
         persistentVolumeClaim:
@@ -29,30 +56,3 @@ spec:
         volumeMounts:
         - name: itop-data
           mountPath: /var/www/itop
-      env:
-      - name: ITOP_DB_HOST
-        value: "itop" # Nom du service MariaDB dans Kubernetes
-      - name: ITOP_DB_NAME
-        value: "itop"
-      - name: ITOP_DB_USER
-        value: "itop"
-      - name: ITOP_DB_PASS
-        value: "itop"
-      - name: PHP_TIMEZONE
-        value: "Europe/Paris"
-      - name: PHP_ENABLE_UPLOADS
-        value: "1"
-      - name: PHP_MEMORY_LIMIT
-        value: "256M"
-      - name: PHP_POST_MAX_SIZE
-        value: "64M"
-      - name: PHP_UPLOAD_MAX_FILESIZE
-        value: "32M"
-      - name: PHP_MAX_FILE_UPLOADS
-        value: "20"
-      - name: PHP_MAX_INPUT_TIME
-        value: "60"
-      - name: PHP_LOG_ERRORS
-        value: "On"
-      - name: PHP_ERROR_REPORTING
-        value: "E_ALL & ~E_DEPRECATED & ~E_STRICT"
