@@ -17,11 +17,6 @@ spec:
         image: bouzidieslem/itop:latest
         ports:
       - containerPort: 80
-      resources:
-          requests:
-            cpu: "200m"
-          limits:
-            cpu: "500m"
         - name: ITOP_DB_HOST
           value: "itop" # Nom du service MariaDB dans Kubernetes
         - name: ITOP_DB_NAME
