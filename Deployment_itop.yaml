@@ -49,3 +49,10 @@ spec:
           value: "On"
         - name: PHP_ERROR_REPORTING
           value: "E_ALL & ~E_DEPRECATED & ~E_STRICT"
+          volumeMounts:
+        - name: itop-data
+          mountPath: /var/www/itop
+      volumes:
+      - name: itop-data
+        persistentVolumeClaim:
+          claimName: itop-pvc-claim
