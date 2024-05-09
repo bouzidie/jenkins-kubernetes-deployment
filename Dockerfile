@@ -99,7 +99,6 @@ RUN set -x \
 #=== Apache vhost ===
 RUN { \
   echo "<VirtualHost *:80>"; \
-  echo "<VirtualHost *:80>"; \
   echo "DocumentRoot /var/www/$APP_NAME"; \
   echo; \
   echo "<Directory /var/www/$APP_NAME>"; \
