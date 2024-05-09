@@ -116,7 +116,6 @@ RUN { \
 #=== Apache security ===
 RUN { \
   echo 'ServerTokens Prod'; \
-  echo 'ServerTokens Prod'; \
   echo 'ServerSignature Off'; \
   echo 'TraceEnable Off'; \
   echo 'Header set X-Content-Type-Options: "nosniff"'; \
