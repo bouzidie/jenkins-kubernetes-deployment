@@ -1,0 +1,52 @@
+# values.yaml
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelector:
+      matchLabels:
+        release: prometheus
+
+  nodeExporter:
+    enabled: true
+
+  kubeStateMetrics:
+    enabled: true
+
+grafana:
+  service:
+    type: NodePort
+    port: 80
+    targetPort: 3000
+  ingress:
+    enabled: false
+  grafana.ini:
+    server:
+      root_url: http://localhost:3000
+    users:
+      default_theme: light
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-kube-prometheus-prometheus
+        isDefault: true
+  dashboards:
+    default:
+      kube-prometheus:
+        gnetId: 6417
+        revision: 1
+        datasource: Prometheus
