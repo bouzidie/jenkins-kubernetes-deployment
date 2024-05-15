@@ -55,4 +55,4 @@ spec:
       volumes:
       - name: itop-data
         persistentVolumeClaim:
-          claimName: itop-pvc
+          claimName: pvc-itop
