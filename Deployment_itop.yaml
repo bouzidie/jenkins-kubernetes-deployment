@@ -17,6 +17,13 @@ spec:
         image: bouzidieslem/itop:latest
         ports:
         - containerPort: 80
+        volumeMounts:
+        - mountPath: "/var/www/html/data"
+          name: itop-data
+      volumes:
+      - name: itop-data
+        persistentVolumeClaim:
+          claimName: itop-pvc
         resources:
           limits:
             cpu: "500m"
