@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: itop-pvc
+  name: pvc-itop
 spec:
   storageClassName: manual
   accessModes:
