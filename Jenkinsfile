@@ -8,7 +8,6 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                // Checkout using the webhook token
                 checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'webhookToken', url: 'https://github.com/bouzidie/jenkins-kubernetes-deployment.git']])
             }
         }
@@ -17,6 +16,19 @@ pipeline {
             steps {
                 script {
                     docker.build(dockerImage)
+                }
+            }
+        }
+
+        stage('Deploy Volumes to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh '''
+                            kubectl apply -f itop-pv.yaml --kubeconfig=\$KUBECONFIG
+                            kubectl apply -f itop-pvc.yaml --kubeconfig=\$KUBECONFIG
+                        '''
+                    }
                 }
             }
         }
@@ -91,11 +103,23 @@ pipeline {
                 }
             }
         }
+
+        stage('Security Scan with OWASP ZAP') {
+            steps {
+                script {
+                    sh '''
+                        docker run --rm -u zap -v /var/jenkins_home/workspace/zap-plugin/zap:/zap/wrk:rw -t zaproxy/zap-stable zap.sh -cmd -quickurl http://192.168.49.2:32480 -quickout /zap/wrk/zap_report.html
+                    '''
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'Application, Prometheus, and Grafana deployed or updated successfully'
+            echo 'Volume, Application iTop, Prometheus, and Grafana deployed or updated successfully'
+            archiveArtifacts artifacts: 'zap/zap_report.html', allowEmptyArchive: true
+            echo 'Security scan report archived successfully'
         }
         failure {
             echo 'Deployment failed'
