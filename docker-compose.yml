@@ -1,6 +1,6 @@
 version: "3.9"
 
-# Use this file for an example for production
+
 
 services:
   db:
@@ -37,7 +37,6 @@ services:
       - PHP_LOG_ERRORS=${PHP_LOG_ERRORS}
       - PHP_ERROR_REPORTING=${PHP_ERROR_REPORTING}
 
-#    image: vbkunin/itop:2.7.4-base
     restart: unless-stopped
     stdin_open: true
     networks:
