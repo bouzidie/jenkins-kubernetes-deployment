@@ -7,7 +7,7 @@ prometheus:
       - job_name: 'jenkins'
         static_configs:
           - targets: ['192.168.30.2:8080']
-        metrics_path: prometheus/metrics
+        metrics_path: '/prometheus/metrics'
   nodeExporter:
     enabled: true
   kubeStateMetrics:
