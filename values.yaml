@@ -6,7 +6,8 @@ prometheus:
     additionalScrapeConfigs:
       - job_name: 'jenkins'
         static_configs:
-          - targets: ['jenkins-service.default.svc.cluster.local:8080']
+          - targets: ['192.168.30.2:8080']
+        metrics_path: /prometheus/metrics
   nodeExporter:
     enabled: true
   kubeStateMetrics:
