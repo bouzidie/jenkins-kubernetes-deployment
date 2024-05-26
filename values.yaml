@@ -1,16 +1,16 @@
-# values.yaml
 prometheus:
   prometheusSpec:
     serviceMonitorSelector:
       matchLabels:
         release: prometheus
-
+    additionalScrapeConfigs:
+      - job_name: 'jenkins'
+        static_configs:
+          - targets: ['jenkins-service.default.svc.cluster.local:8080']
   nodeExporter:
     enabled: true
-
   kubeStateMetrics:
     enabled: true
-
 grafana:
   service:
     type: NodePort
@@ -27,23 +27,23 @@ grafana:
     dashboardproviders.yaml:
       apiVersion: 1
       providers:
-      - name: 'default'
-        orgId: 1
-        folder: ''
-        type: file
-        disableDeletion: false
-        editable: true
-        options:
-          path: /var/lib/grafana/dashboards/default
+        - name: default
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
   datasources:
     datasources.yaml:
       apiVersion: 1
       datasources:
-      - name: Prometheus
-        type: prometheus
-        access: proxy
-        url: http://prometheus-kube-prometheus-prometheus
-        isDefault: true
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-kube-prometheus-prometheus
+          isDefault: true
   dashboards:
     default:
       kube-prometheus:
