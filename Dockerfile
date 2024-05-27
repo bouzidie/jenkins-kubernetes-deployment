@@ -93,7 +93,7 @@ RUN set -x \
  && curl -sL https://sourceforge.net/projects/itop/files/itop/$ITOP_VERSION/iTop-$ITOP_VERSION-$ITOP_PATCH.zip \
   | bsdtar --strip-components=1 -xf- web \
  \
- && chmod -R 777 /var/www/$APP_NAME \ # Insecure file permissions
+ && chmod -R 777 /var/www/$APP_NAME \
  && apt-get autoremove -y ${buildDeps} \
  && rm -rf /var/lib/apt/lists/*
 
@@ -105,7 +105,7 @@ RUN { \
   echo "<Directory /var/www/$APP_NAME>"; \
   echo "\tOptions -Indexes"; \
   echo "\tAllowOverride all"; \
-  echo "\tRequire all granted"; \ # Insecure directory permissions
+  echo "\tRequire all granted"; \
   echo "</Directory>"; \
   echo "</VirtualHost>"; \
  } | tee "$APACHE_CONFDIR/sites-available/$APP_NAME.conf" \
@@ -138,7 +138,7 @@ ENV PHP_TIMEZONE=${PHP_TIMEZONE} \
     PHP_ERROR_REPORTING=${PHP_ERROR_REPORTING} \
     ADMIN_PASSWORD="VerySecretPassword" # Inclusion de secrets directement dans le Dockerfile
 
-EXPOSE 22 80 443 # Exposing SSH, HTTP and HTTPS ports
+EXPOSE 22 80 443
 
 #=== Set custom entrypoint ===
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
