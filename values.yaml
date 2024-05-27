@@ -1,5 +1,7 @@
 prometheus:
   prometheusSpec:
+    scrape_interval: 30s
+    scrape_timeout: 20s
     serviceMonitorSelector:
       matchLabels:
         release: prometheus
