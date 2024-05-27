@@ -93,7 +93,6 @@ RUN set -x \
  && curl -sL https://sourceforge.net/projects/itop/files/itop/$ITOP_VERSION/iTop-$ITOP_VERSION-$ITOP_PATCH.zip \
   | bsdtar --strip-components=1 -xf- web \
  \
- && chmod -R 777 /var/www/$APP_NAME \
  && apt-get autoremove -y ${buildDeps} \
  && rm -rf /var/lib/apt/lists/*
 
@@ -105,7 +104,6 @@ RUN { \
   echo "<Directory /var/www/$APP_NAME>"; \
   echo "\tOptions -Indexes"; \
   echo "\tAllowOverride all"; \
-  echo "\tRequire all granted"; \
   echo "</Directory>"; \
   echo "</VirtualHost>"; \
  } | tee "$APACHE_CONFDIR/sites-available/$APP_NAME.conf" \
@@ -114,9 +112,6 @@ RUN { \
  && a2ensite $APP_NAME \
  && a2enmod headers \
  && echo "ServerName $APP_NAME" >> $APACHE_CONFDIR/apache2.conf
-
-EXPOSE 22 80 443
-# Expose SSH and HTTP/S ports, which might be non-standard and insecure configuration if SSH is not properly secured
 
 #=== Apache security ===
 RUN { \
@@ -138,8 +133,7 @@ ENV PHP_TIMEZONE=${PHP_TIMEZONE} \
     PHP_MAX_FILE_UPLOADS=${PHP_MAX_FILE_UPLOADS} \
     PHP_MAX_INPUT_TIME=${PHP_MAX_INPUT_TIME} \
     PHP_LOG_ERRORS=${PHP_LOG_ERRORS} \
-    PHP_ERROR_REPORTING=${PHP_ERROR_REPORTING} \
-    ADMIN_PASSWORD="VerySecretPassword" # Bad practice: Including secrets directly in the Dockerfile
+    PHP_ERROR_REPORTING=${PHP_ERROR_REPORTING}
 
 #=== Set custom entrypoint ===
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
@@ -147,4 +141,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint
 ENTRYPOINT [ "docker-entrypoint" ]
 
 #=== Re-Set CMD as we changed the default entrypoint ===
-CMD [ "apache2-foreground" ]
+CMD [ "apache2-foreground" ]       
