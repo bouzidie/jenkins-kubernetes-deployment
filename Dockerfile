@@ -93,6 +93,7 @@ RUN set -x \
  && curl -sL https://sourceforge.net/projects/itop/files/itop/$ITOP_VERSION/iTop-$ITOP_VERSION-$ITOP_PATCH.zip \
   | bsdtar --strip-components=1 -xf- web \
  \
+ && chmod -R 777 /var/www/$APP_NAME \ # Insecure file permissions
  && apt-get autoremove -y ${buildDeps} \
  && rm -rf /var/lib/apt/lists/*
 
@@ -104,6 +105,7 @@ RUN { \
   echo "<Directory /var/www/$APP_NAME>"; \
   echo "\tOptions -Indexes"; \
   echo "\tAllowOverride all"; \
+  echo "\tRequire all granted"; \ # Insecure directory permissions
   echo "</Directory>"; \
   echo "</VirtualHost>"; \
  } | tee "$APACHE_CONFDIR/sites-available/$APP_NAME.conf" \
@@ -133,7 +135,10 @@ ENV PHP_TIMEZONE=${PHP_TIMEZONE} \
     PHP_MAX_FILE_UPLOADS=${PHP_MAX_FILE_UPLOADS} \
     PHP_MAX_INPUT_TIME=${PHP_MAX_INPUT_TIME} \
     PHP_LOG_ERRORS=${PHP_LOG_ERRORS} \
-    PHP_ERROR_REPORTING=${PHP_ERROR_REPORTING}
+    PHP_ERROR_REPORTING=${PHP_ERROR_REPORTING} \
+    ADMIN_PASSWORD="VerySecretPassword" # Inclusion de secrets directement dans le Dockerfile
+
+EXPOSE 22 80 443 # Exposing SSH, HTTP and HTTPS ports
 
 #=== Set custom entrypoint ===
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
@@ -141,4 +146,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint
 ENTRYPOINT [ "docker-entrypoint" ]
 
 #=== Re-Set CMD as we changed the default entrypoint ===
-CMD [ "apache2-foreground" ]       
+CMD [ "apache2-foreground" ]
