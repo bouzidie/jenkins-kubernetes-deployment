@@ -141,4 +141,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint
 ENTRYPOINT [ "docker-entrypoint" ]
 
 #=== Re-Set CMD as we changed the default entrypoint ===
-CMD [ "apache2-foreground" ] 
+CMD [ "apache2-foreground" ]       
