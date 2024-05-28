@@ -10,44 +10,10 @@ prometheus:
         static_configs:
           - targets: ['192.168.30.2:8080']
         metrics_path: '/prometheus/metrics/'
-    ruleSelector:
-      matchLabels:
-        prometheus: k8s
-  additionalPrometheusRules:
-    - name: test-alerts
-      groups:
-        - name: example
-          rules:
-            - alert: TestAlert
-              expr: vector(1)
-              for: 1m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Test Alert"
-                description: "This is a test alert."
-
   nodeExporter:
     enabled: true
   kubeStateMetrics:
     enabled: true
-
-alertmanager:
-  alertmanagerSpec:
-    config:
-      global:
-        resolve_timeout: 5m
-      route:
-        group_by: ['alertname']
-        group_wait: 30s
-        group_interval: 5m
-        repeat_interval: 12h
-        receiver: 'discord'
-      receivers:
-        - name: 'discord'
-          webhook_configs:
-            - url: 'https://discord.com/api/webhooks/1244807716522688633/_BDDdlYOj9kA_nKHVL7soWmOSvz2_O2gpkWoaT6VybPdm2Db4zwBmDv9zNxWW8OC5d-F'  # Remplacez par l'URL de votre webhook Discord
-
 grafana:
   service:
     type: NodePort
@@ -87,3 +53,4 @@ grafana:
         gnetId: 6417
         revision: 1
         datasource: Prometheus
+	
