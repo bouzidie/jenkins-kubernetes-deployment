@@ -1,41 +1,169 @@
 pipeline {
-  environment {
-    dockerimagename = "bouzidieslem/itop:latest"
-    dockerImage = ""
-  }
-  agent any
-  stages {
-    stage('Checkout Source') {
-      steps {
-        git 'https://github.com/bouzidie/jenkins-kubernetes-deployment.git'
-      }
+    agent any
+
+    environment {
+        dockerImage = 'bouzidieslem/itop:latest'
     }
-    stage('Build image') {
-      steps{
-        script {
-          dockerImage = docker.build bouzidieslem/itop:latest
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'webhookToken', url: 'https://github.com/bouzidie/jenkins-kubernetes-deployment.git']])
+            }
         }
-      }
-    }
-    stage('Pushing Image') {
-      environment {
-          registryCredential = 'dockerhub-credentials'
-           }
-      steps{
-        script {
-          docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
-            dockerImage.push("latest")
-          }
+
+        stage('Build Image') {
+            steps {
+                script {
+                    docker.build(dockerImage)
+                }
+            }
         }
-      }
-    }
-    stage('Deploying itop container to Kubernetes') {
-      steps {
-        script {
-          kubernetesDeploy(configs: "Deployment_itop.yaml", 
-                                         "service_itop.yaml")
+
+        stage('Deploy Volumes et BDD to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh '''
+                            kubectl apply -f itop-pv.yaml --kubeconfig=$KUBECONFIG
+                            kubectl apply -f itop-pvc.yaml --kubeconfig=$KUBECONFIG
+                            kubectl apply -f mariadb-pv.yaml --kubeconfig=$KUBECONFIG
+                            kubectl apply -f mariadb-pvc.yaml --kubeconfig=$KUBECONFIG
+                        '''
+                    }
+                }
+            }
         }
-      }
+
+        stage('Deploy Applications to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh '''
+                            kubectl apply -f Deployment_mariadb.yaml -f service_mariadb.yaml --kubeconfig=$KUBECONFIG
+                            kubectl apply -f Deployment_itop.yaml -f service_itop.yaml --kubeconfig=$KUBECONFIG
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Setup Helm Repositories') {
+            steps {
+                script {
+                    sh '''
+                        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                        helm repo add grafana https://grafana.github.io/helm-charts
+                        helm repo update
+                    '''
+                }
+            }
+        }
+
+        stage('Create ConfigMap for Prometheus Rules') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh '''
+                            kubectl create configmap kubernetes-pod-alerts --from-file=kubernetes-pod-alerts.yaml -n default --kubeconfig=$KUBECONFIG --dry-run=client -o yaml | kubectl apply -f -
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install or Update Prometheus') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        try {
+                            def releaseStatus = sh(script: 'helm list --namespace default --kubeconfig=$KUBECONFIG | grep prometheus', returnStatus: true)
+                            if (releaseStatus == 0) {
+                                echo "Prometheus is already installed. Upgrading..."
+                                sh 'helm upgrade prometheus prometheus-community/kube-prometheus-stack -f values.yaml --namespace default --kubeconfig=$KUBECONFIG'
+                            } else {
+                                echo "Installing Prometheus..."
+                                sh 'helm install prometheus prometheus-community/kube-prometheus-stack -f values.yaml --namespace default --kubeconfig=$KUBECONFIG'
+                            }
+                        } catch (Exception e) {
+                            echo "Upgrade failed, attempting to uninstall and reinstall Prometheus..."
+                            sh 'helm uninstall prometheus --namespace default --kubeconfig=$KUBECONFIG || true'
+                            sh 'helm install prometheus prometheus-community/kube-prometheus-stack -f values.yaml --namespace default --kubeconfig=$KUBECONFIG'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Install or Update Grafana') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        try {
+                            def releaseStatus = sh(script: 'helm list --namespace default --kubeconfig=$KUBECONFIG | grep grafana', returnStatus: true)
+                            if (releaseStatus == 0) {
+                                echo "Grafana is already installed. Upgrading..."
+                                sh 'helm upgrade grafana grafana/grafana -f values.yaml --namespace default --kubeconfig=$KUBECONFIG'
+                            } else {
+                                echo "Installing Grafana..."
+                                sh 'helm install grafana grafana/grafana -f values.yaml --namespace default --kubeconfig=$KUBECONFIG'
+                            }
+                        } catch (Exception e) {
+                            echo "Upgrade failed, attempting to uninstall and reinstall Grafana..."
+                            sh 'helm uninstall grafana --namespace default --kubeconfig=$KUBECONFIG || true'
+                            sh 'helm install grafana grafana/grafana -f values.yaml --namespace default --kubeconfig=$KUBECONFIG'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Get Grafana Credentials') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh '''
+                            echo "Grafana Admin Password:"
+                            kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" --kubeconfig=$KUBECONFIG | base64 --decode ; echo
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Security Scan with OWASP ZAP') {
+            steps {
+                script {
+                    sh '''
+                        docker run --rm -u zap -v /var/jenkins_home/workspace/zap-plugin/zap:/zap/wrk:rw -t zaproxy/zap-stable zap.sh -cmd -quickurl http://192.168.49.2:32480 -quickout /zap/wrk/zap_report.html
+                        ln -sf /var/jenkins_home/workspace/zap-plugin/zap/zap_report.html zap_report.html
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Artifact') {
+            steps {
+                script {
+                    sh '''
+                        echo "Verifying zap_report.html exists:"
+                        ls -la /var/jenkins_home/workspace/zap-plugin/zap/
+                    '''
+                }
+            }
+        }
     }
-  }
+
+    post {
+        success {
+            echo 'Volumes, Applications iTop and MariaDB, Prometheus, and Grafana deployed or updated successfully'
+            archiveArtifacts artifacts: 'zap_report.html', allowEmptyArchive: true
+            echo 'Security scan report archived successfully'
+        }
+        failure {
+            echo 'Deployment failed'
+        }
+    }
 }
+
+	
