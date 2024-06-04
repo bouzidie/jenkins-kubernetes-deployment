@@ -20,7 +20,7 @@ pipeline {
             }
         }
 
-        stage('Deploy Volumes et BDD to Kubernetes') {
+        stage('Deploy Volumes to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
                     script {
@@ -56,18 +56,6 @@ pipeline {
                         helm repo add grafana https://grafana.github.io/helm-charts
                         helm repo update
                     '''
-                }
-            }
-        }
-
-        stage('Create ConfigMap for Prometheus Rules') {
-            steps {
-                withCredentials([file(credentialsId: 'minikube-config', variable: 'KUBECONFIG')]) {
-                    script {
-                        sh '''
-                            kubectl create configmap kubernetes-pod-alerts --from-file=kubernetes-pod-alerts.yaml -n default --kubeconfig=$KUBECONFIG --dry-run=client -o yaml | kubectl apply -f -
-                        '''
-                    }
                 }
             }
         }
@@ -165,5 +153,3 @@ pipeline {
         }
     }
 }
-
-	
